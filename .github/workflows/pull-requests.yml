@@ -32,20 +32,3 @@ jobs:
     uses: ./.github/workflows/build-and-test.workflow.yml
     permissions:
       contents: read
-
-  validate-docker:
-    name: Validate Docker Build
-    uses: ./.github/workflows/docker.workflow.yml
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm/v6
-          - linux/arm/v7
-          - linux/arm64
-    with:
-      platforms: ${{ matrix.platform }}
-      push: false

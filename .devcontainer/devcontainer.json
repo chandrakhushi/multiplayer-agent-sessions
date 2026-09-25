@@ -1,0 +1,11 @@
+{
+  "name": "multiplayer-agent-sessions",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "containerEnv": { "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0" },
+  "postCreateCommand": "corepack enable && pnpm install && pnpm build",
+  "postAttachCommand": "pnpm start",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Agent session", "onAutoForward": "openBrowser" }
+  }
+}

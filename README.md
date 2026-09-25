@@ -5,6 +5,11 @@ each participant only sees the parts of the session their own permissions allow,
 and a **claim-lock** stops two people from having the agent act on the same
 piece of work twice.
 
+**[Project site](https://chandrakhushi.github.io/multiplayer-agent-sessions/)**
+·
+[Open in GitHub Codespaces](https://codespaces.new/chandrakhushi/multiplayer-agent-sessions)
+(runs the real app in your browser, no install)
+
 <!-- Demo recording: docs/demo.gif (see docs/demo-script.md) -->
 
 ## The gap
