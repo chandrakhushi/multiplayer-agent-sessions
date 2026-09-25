@@ -21,7 +21,8 @@
     "lint:fix": "eslint --fix src",
     "start": "NODE_ENV=production node ./build/main.js",
     "test": "mocha",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "chmod +x node_modules/node-pty/prebuilds/*/spawn-helper 2>/dev/null || true"
   },
   "publishConfig": {
     "provenance": true,

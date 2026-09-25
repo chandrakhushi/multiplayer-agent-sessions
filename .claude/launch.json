@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wetty",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "build/main.js",
+        "--conf",
+        "conf/config.json5",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "3000"
+      ],
+      "port": 3000
+    }
+  ]
+}
