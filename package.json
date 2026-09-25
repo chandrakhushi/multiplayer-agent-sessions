@@ -1,8 +1,8 @@
 {
-  "name": "wetty",
+  "name": "multiplayer-agent-sessions",
   "version": "3.0.0",
-  "description": "WeTTY = Web + TTY. Terminal access in browser over http/https",
-  "homepage": "https://github.com/butlerx/wetty",
+  "description": "Permission-scoped multiplayer agent sessions: per-viewer redaction and claim-locks, built on wetty",
+  "homepage": "https://github.com/chandrakhushi/multiplayer-agent-sessions",
   "license": "MIT",
   "type": "module",
   "bin": "./build/main.js",
@@ -28,10 +28,10 @@
     "provenance": true,
     "access": "public"
   },
-  "repository": "git://github.com/butlerx/wetty.git",
+  "repository": "github:chandrakhushi/multiplayer-agent-sessions",
   "author": "Cian Butler <butlerx@notthe.cloud> (cianbutler.ie)",
   "bugs": {
-    "url": "https://github.com/butlerx/wetty/issues"
+    "url": "https://github.com/chandrakhushi/multiplayer-agent-sessions/issues"
   },
   "lint-staged": {
     "*.{js,ts}": [
