@@ -48,6 +48,26 @@ const render = (title: string, base: string): string => `<!doctype html>
       <iframe class="editor" src="${base}/client/xterm_config/index.html"></iframe>
     </div>
     <div id="terminal"></div>
+    <aside id="sidebar" aria-label="Session">
+      <section class="sidebar-section" aria-labelledby="you-name">
+        <h2 id="you-name">Joining&hellip;</h2>
+        <ul id="you-tools" class="chips" aria-label="Your integrations"></ul>
+        <p class="hint">Tool calls from other people's integrations are redacted in your view.</p>
+      </section>
+      <section class="sidebar-section" aria-labelledby="presence-heading">
+        <h3 id="presence-heading">In this session</h3>
+        <ul id="presence"></ul>
+      </section>
+      <section class="sidebar-section" aria-labelledby="tickets-heading">
+        <h3 id="tickets-heading">Tickets</h3>
+        <ul id="tickets"></ul>
+      </section>
+    </aside>
+    <dialog id="picker" aria-labelledby="picker-title">
+      <h1 id="picker-title">Join agent session</h1>
+      <p>Pick who you are in this tab.</p>
+      <div id="picker-options"></div>
+    </dialog>
     ${jsFiles
       .map(
         (file) =>

@@ -5,10 +5,7 @@ import '../assets/scss/styles.scss';
 
 import { disconnect } from './wetty/disconnect';
 import { overlay } from './wetty/disconnect/elements';
-import { verifyPrompt } from './wetty/disconnect/verify';
-import { FileDownloader } from './wetty/download';
-import { FlowControlClient } from './wetty/flowcontrol';
-import { mobileKeyboard } from './wetty/mobile';
+import { pickOrJoin, session } from './wetty/session';
 import { socket } from './wetty/socket';
 import { terminal, Term } from './wetty/term';
 
@@ -34,42 +31,19 @@ function onResize(term: Term): () => void {
   };
 }
 
-socket.on('connect', () => {
-  const term = terminal(socket);
-  if (term === undefined) return;
-
-  if (overlay !== null) overlay.style.display = 'none';
-  window.addEventListener('beforeunload', verifyPrompt, false);
+function setup(term: Term): void {
   window.addEventListener('resize', onResize(term), false);
-
   term.resizeTerm();
-  term.focus();
-  mobileKeyboard();
-  const fileDownloader = new FileDownloader();
-  const fcClient = new FlowControlClient();
+  // Read-only view: v1 input goes through claim buttons so the broker can
+  // enforce locks, so xterm onData is not forwarded to 'input'.
+  term.options.disableStdin = true;
 
-  term.onData((data: string) => {
-    socket.emit('input', data);
-  });
   term.onResize((size: { cols: number; rows: number }) => {
     socket.emit('resize', size);
   });
   socket
     .on('data', (data: string) => {
-      const remainingData = fileDownloader.buffer(data);
-      const downloadLength = data.length - remainingData.length;
-      if (downloadLength && fcClient.needsCommit(downloadLength)) {
-        socket.emit('commit', fcClient.ackBytes);
-      }
-      if (remainingData) {
-        if (fcClient.needsCommit(remainingData.length)) {
-          term.write(remainingData, () =>
-            socket.emit('commit', fcClient.ackBytes),
-          );
-        } else {
-          term.write(remainingData);
-        }
-      }
+      term.write(data);
     })
     .on('login', () => {
       term.writeln('');
@@ -80,4 +54,22 @@ socket.on('connect', () => {
     .on('error', (err: string | null) => {
       if (err) disconnect(err);
     });
+
+  session(socket, () => {
+    // Server (re)sends this viewer's redacted stream after 'joined'.
+    term.reset();
+    term.resizeTerm();
+  });
+}
+
+let term: Term | undefined;
+
+socket.on('connect', () => {
+  if (overlay !== null) overlay.style.display = 'none';
+  if (term === undefined) {
+    term = terminal(socket);
+    if (term === undefined) return;
+    setup(term);
+  }
+  pickOrJoin(socket);
 });

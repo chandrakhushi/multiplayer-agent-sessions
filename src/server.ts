@@ -2,13 +2,13 @@
  * Create WeTTY server
  * @module WeTTy
  */
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { Gauge, collectDefaultMetrics } from 'prom-client';
-import { getCommand } from './server/command.js';
 import { observeGC } from './server/metrics.js';
-import { logSafeArgs } from './server/shared/logsafe.js';
+import { createBroker } from './server/session-broker.js';
 import { server } from './server/socketServer.js';
-import { spawn } from './server/spawn.js';
 import {
   sshDefault,
   serverDefault,
@@ -46,8 +46,9 @@ export async function decorateServerWithSsh(
   app: Express,
   ssh: SSH = sshDefault,
   serverConf: Server = serverDefault,
-  command: string = defaultCommand,
-  forcessh: boolean = forceSSHDefault,
+  // unused since the broker replaced getCommand+spawn; kept for API compat
+  _command: string = defaultCommand,
+  _forcessh: boolean = forceSSHDefault,
   ssl?: SSL,
 ): Promise<SocketIO.Server> {
   const logger = getLogger();
@@ -63,11 +64,15 @@ export async function decorateServerWithSsh(
   observeGC();
 
   const io = await server(app, serverConf, ssl);
+  // build/server.js -> build/agent/agent-stub.js
+  const attach = createBroker(
+    resolve(dirname(fileURLToPath(import.meta.url)), 'agent', 'agent-stub.js'),
+  );
   /**
    * Wetty server connected too
    * @fires WeTTy#connnection
    */
-  io.on('connection', async (socket: SocketIO.Socket) => {
+  io.on('connection', (socket: SocketIO.Socket) => {
     /**
      * @event wetty#connection
      * @name connection
@@ -75,14 +80,10 @@ export async function decorateServerWithSsh(
     logger.info('Connection accepted.');
     wettyConnections.inc();
 
-    try {
-      const args = await getCommand(socket, ssh, command, forcessh);
-      logger.debug('Command Generated', { cmd: logSafeArgs(args).join(' ') });
-      await spawn(socket, args);
-    } catch (error) {
-      logger.info('Disconnect signal sent', { err: error });
+    socket.on('disconnect', () => {
       wettyConnections.dec();
-    }
+    });
+    attach(socket);
   });
   return io;
 }

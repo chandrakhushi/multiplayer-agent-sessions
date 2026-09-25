@@ -1,6 +1,8 @@
+@use './session';
+
 #terminal {
   display: flex;
   height: 100%;
   position: relative;
-  width: 100%;
+  width: calc(100% - #{session.$sidebar-width});
 }
