@@ -185,7 +185,7 @@ importers:
         version: 5.5.6(eslint-config-prettier@10.1.8(eslint@10.9.0(jiti@2.6.1)))(eslint@10.9.0(jiti@2.6.1))(prettier@3.8.3)
       git-authors-cli:
         specifier: ^1.0.53
-        version: 1.0.53
+        version: 1.0.54
       globals:
         specifier: ^17.6.0
         version: 17.6.0
@@ -264,8 +264,8 @@ packages:
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
 
-  '@bufbuild/protobuf@2.14.0':
-    resolution: {integrity: sha512-C3UGsiCwSprE2NKIIFA3hCDlpXTMCAXRZuEVp88L1GY36Y41+rYL5fryE+nOFhp4p4JPQvdV8PQ4DWgHgeTE+w==}
+  '@bufbuild/protobuf@2.15.0':
+    resolution: {integrity: sha512-DAheWUkVr/SJTWCc+lg9dhY0eN4SaWlf4+bG1KzHeXbnqt0AfB/NX0Z+VunGlM1ki1B4zVvye27MpKh/svySUA==}
 
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -2058,8 +2058,8 @@ packages:
   get-tsconfig@4.14.0:
     resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
 
-  git-authors-cli@1.0.53:
-    resolution: {integrity: sha512-Z+Sw2iCV+N5DcGg55aVoplkugd2iyUbq7aBJPpDCBm36rxjq0ToEQG+cTxm5LAkIPBjJdqie8fLj2tfFCF4RHQ==}
+  git-authors-cli@1.0.54:
+    resolution: {integrity: sha512-hyO2zXKS8TEQBWj0n1BtUagrCJJF1zRf1xTDRUdFKxbKoEb85LslpFEXL7OW24dBgu0PYEgMf9mjF941MwC/0g==}
     engines: {node: '>= 20'}
     hasBin: true
 
@@ -2366,8 +2366,8 @@ packages:
     resolution: {integrity: sha512-TuDuZ5KrgyjoCIppdPXBMqiGfota55+odM+j2cQ5rt/XKyKmqGB3Whz1F8SN8+60yYGy/Nu5lbRZ+rx8kBIvBw==}
     engines: {node: '>=10'}
 
-  json-future@2.2.25:
-    resolution: {integrity: sha512-Bi3XDu0x3FV7IN+PKSNA8Ru065Ax/U542o7fZDqTRqt2It8EuBdDfll4ECt/8ozDQEOG34nWugrbnx30GIb1/w==}
+  json-future@2.2.28:
+    resolution: {integrity: sha512-qXgtRcAM2ddpkBTtoAPV4fCkd/E2ZCU71NXD4N61d6Vkq7t1xlV0GGJ9Zmzm3Ag2dqlzbm15SS1kHWqmJR3KDA==}
     engines: {node: '>= 4'}
 
   json-parse-better-errors@1.0.2:
@@ -4014,7 +4014,7 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@bufbuild/protobuf@2.14.0': {}
+  '@bufbuild/protobuf@2.15.0': {}
 
   '@colors/colors@1.5.0':
     optional: true
@@ -5896,10 +5896,10 @@ snapshots:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
-  git-authors-cli@1.0.53:
+  git-authors-cli@1.0.54:
     dependencies:
       email-regex: 4.0.0
-      json-future: 2.2.25
+      json-future: 2.2.28
       mri: 1.2.0
       tinyspawn: 1.2.14
 
@@ -6196,7 +6196,7 @@ snapshots:
       chalk: 4.1.2
       pegjs: 0.10.0
 
-  json-future@2.2.25:
+  json-future@2.2.28:
     dependencies:
       args-js: 0.10.12
       async: 3.2.6
@@ -6490,7 +6490,7 @@ snapshots:
   normalize-package-data@6.0.2:
     dependencies:
       hosted-git-info: 7.0.2
-      semver: 7.8.5
+      semver: 7.8.4
       validate-npm-package-license: 3.0.4
 
   normalize-package-data@8.0.0:
@@ -6929,7 +6929,7 @@ snapshots:
 
   sass-embedded@1.100.0:
     dependencies:
-      '@bufbuild/protobuf': 2.14.0
+      '@bufbuild/protobuf': 2.15.0
       colorjs.io: 0.5.2
       immutable: 5.1.9
       rxjs: 7.8.2
