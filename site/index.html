@@ -1,0 +1,565 @@
+<meta charset="utf-8">
+<title>Scoped Agent Sessions</title>
+<meta name="description" content="A shared agent session where each teammate only sees what their own integrations allow, and claim-locks stop duplicate work.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --ground: #f2f3f0;
+    --surface: #ffffff;
+    --ink: #15171a;
+    --muted: #5a6168;
+    --line: #d8dbd6;
+    --accent: #2c47c4;
+    --accent-ink: #ffffff;
+    --claim: #9a6412;
+    --claim-soft: #f6ead4;
+    --ok: #1f7a4d;
+    --ok-soft: #e1f1e8;
+    --bar: #15171a;
+    --bar-ink: #f2f3f0;
+    --doc: #fbfbf9;
+    --tool: #2c47c4;
+    --display: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+    --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #111315;
+      --surface: #1a1d20;
+      --ink: #e8eae7;
+      --muted: #9aa1a8;
+      --line: #2c3034;
+      --accent: #92a4ff;
+      --accent-ink: #111315;
+      --claim: #e3a94a;
+      --claim-soft: #33291a;
+      --ok: #6fd3a0;
+      --ok-soft: #17291f;
+      --bar: #e8eae7;
+      --bar-ink: #111315;
+      --doc: #16181b;
+      --tool: #92a4ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #111315;
+    --surface: #1a1d20;
+    --ink: #e8eae7;
+    --muted: #9aa1a8;
+    --line: #2c3034;
+    --accent: #92a4ff;
+    --accent-ink: #111315;
+    --claim: #e3a94a;
+    --claim-soft: #33291a;
+    --ok: #6fd3a0;
+    --ok-soft: #17291f;
+    --bar: #e8eae7;
+    --bar-ink: #111315;
+    --doc: #16181b;
+    --tool: #92a4ff;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font: 17px/1.6 var(--body);
+    padding-inline: 20px;
+  }
+  .wrap { max-width: 1120px; margin-inline: auto; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.05; text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+  code, kbd { font-family: var(--mono); font-size: 0.88em; }
+
+  /* Header */
+  .top {
+    display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding-block: 20px; border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .brand { font-family: var(--mono); font-weight: 600; letter-spacing: -0.01em; }
+  .brand span { color: var(--muted); font-weight: 400; }
+  .top nav { display: flex; gap: 20px; flex-wrap: wrap; }
+  .top nav a { color: var(--muted); text-decoration: none; }
+  .top nav a:hover { color: var(--ink); }
+
+  /* Hero */
+  .hero {
+    display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; align-items: start;
+    padding-block: 56px 72px;
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .hero h1 { font-size: clamp(40px, 5.4vw, 68px); font-weight: 800; letter-spacing: -0.03em; }
+  .hero h1 .x { display: inline-block; background: var(--bar); color: var(--bar-ink); padding: 0 0.12em; border-radius: 2px; }
+  .lede { margin-top: 24px; font-size: 19px; color: var(--muted); max-width: 34ch; }
+  .lede strong { color: var(--ink); }
+  .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+  .btn {
+    font: 600 15px/1 var(--body); padding: 13px 18px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn:hover { filter: brightness(1.05); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+
+  /* Session viewer */
+  .viewer { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .viewer-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+  }
+  .viewer-head .label { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+  .seats { display: flex; gap: 6px; flex-wrap: wrap; }
+  .seat {
+    font: 600 13px/1.2 var(--body); padding: 7px 11px; border-radius: 999px; border: 1px solid var(--line);
+    background: transparent; color: var(--ink); cursor: pointer; text-align: left;
+  }
+  .seat small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+  .seat[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  .seat[aria-pressed="true"] small { color: var(--ground); opacity: 0.75; }
+  .perm {
+    padding: 10px 14px; font-size: 13px; color: var(--muted); border-bottom: 1px dashed var(--line); background: var(--doc);
+    font-family: var(--mono);
+  }
+  .perm b { color: var(--ink); font-weight: 600; }
+  .doc {
+    background: var(--doc); font: 13px/1.65 var(--mono); padding: 16px 16px 20px; margin: 0;
+    min-height: 420px; overflow-x: auto;
+  }
+  .ln { white-space: pre-wrap; word-break: break-word; }
+  .ln .who { color: var(--muted); }
+  .ln .dot { color: var(--tool); }
+  .blk { margin: 6px 0; border-left: 2px solid var(--tool); padding-left: 12px; }
+  .blk .hd { color: var(--tool); font-weight: 600; }
+  .red { display: flex; flex-direction: column; gap: 5px; margin: 8px 0; }
+  .red .bar { height: 11px; background: var(--bar); border-radius: 1px; transition: width 0.4s ease; }
+  .red .tag {
+    align-self: flex-start; font-size: 11px; letter-spacing: 0.02em; color: var(--bar-ink); background: var(--bar);
+    padding: 2px 8px; border-radius: 2px;
+  }
+  .note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+  /* Sections */
+  section.band { padding-block: 72px; border-top: 1px solid var(--line); }
+  .band h2 { font-size: clamp(30px, 3.6vw, 44px); font-weight: 700; letter-spacing: -0.02em; max-width: 22ch; }
+  .band .intro { margin-top: 16px; color: var(--muted); max-width: 62ch; }
+  .gaps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; margin-top: 40px; }
+  .gap h3 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+  .gap p { margin-top: 10px; color: var(--muted); max-width: 52ch; }
+  .gap .fix { margin-top: 14px; color: var(--ink); }
+  .gap .fix b { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-right: 6px; }
+  blockquote {
+    margin: 40px 0 0; padding: 20px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    max-width: 760px;
+  }
+  blockquote p { font-size: 18px; }
+  blockquote cite { display: block; margin-top: 10px; font-style: normal; font-size: 14px; color: var(--muted); }
+
+  /* Claim race */
+  .race { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.1fr); gap: 16px; margin-top: 36px; }
+  .desk { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .desk .name { font-family: var(--display); font-weight: 700; font-size: 20px; }
+  .desk .role { font-size: 13px; color: var(--muted); }
+  .ticket { border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--doc); }
+  .ticket .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .ticket .id { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .ticket .title { font-size: 15px; }
+  .pill { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--ground); color: var(--muted); white-space: nowrap; }
+  .pill.mine { background: var(--ok-soft); color: var(--ok); }
+  .pill.theirs { background: var(--claim-soft); color: var(--claim); }
+  .toast {
+    font-size: 14px; background: var(--claim-soft); color: var(--claim); border-radius: 8px; padding: 10px 12px;
+  }
+  .log { background: var(--doc); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .log h3 { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .log ol { list-style: none; margin: 0; padding: 0; font: 12.5px/1.55 var(--mono); display: flex; flex-direction: column; gap: 8px; }
+  .log li { display: grid; grid-template-columns: 5.2em minmax(0, 1fr); gap: 8px; font-variant-numeric: tabular-nums; }
+  .log .t { color: var(--muted); }
+  .log .granted { color: var(--ok); }
+  .log .rejected { color: var(--claim); }
+  .log .empty { color: var(--muted); font-family: var(--body); font-size: 14px; display: block; }
+  .race-ctrl { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+
+  /* How it works */
+  .flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 40px; counter-reset: step; }
+  .step { counter-increment: step; border-top: 2px solid var(--ink); padding-top: 16px; }
+  .step::before { content: "Step " counter(step); font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .step h3 { font-size: 22px; font-weight: 700; margin-top: 8px; }
+  .step p { margin-top: 10px; color: var(--muted); }
+  .step pre { margin: 14px 0 0; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font: 12px/1.5 var(--mono); overflow-x: auto; white-space: pre; }
+  .pipe { margin-top: 40px; overflow-x: auto; }
+  .pipe pre { margin: 0; font: 13px/1.6 var(--mono); color: var(--muted); white-space: pre; }
+  .pipe b { color: var(--ink); font-weight: 600; }
+
+  /* Run it */
+  .run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; margin-top: 36px; align-items: start; }
+  .term { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .term-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); font: 12px var(--mono); color: var(--muted); }
+  .term pre { margin: 0; padding: 16px; font: 14px/1.7 var(--mono); overflow-x: auto; }
+  .term pre .c { color: var(--muted); }
+  .copy { font: 600 12px var(--body); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  ul.later { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  ul.later li { padding-left: 22px; position: relative; color: var(--muted); }
+  ul.later li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 12px; height: 7px; background: var(--bar); border-radius: 1px; }
+  ul.later li b { color: var(--ink); font-weight: 700; }
+
+  footer { border-top: 1px solid var(--line); padding-block: 28px 48px; font-size: 14px; color: var(--muted); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: minmax(0, 1fr); gap: 36px; padding-block: 40px 56px; }
+    .race { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .log { grid-column: 1 / -1; }
+    .flow { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .run { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 640px) {
+    body { padding-inline: 16px; font-size: 16px; }
+    .gaps { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+    .race { grid-template-columns: minmax(0, 1fr); }
+    .doc { min-height: 0; font-size: 12px; }
+    section.band { padding-block: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .red .bar { transition: none; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">multiplayer-agent-sessions <span>/ v1 proof of concept</span></div>
+    <nav aria-label="Sections">
+      <a href="#gap">The gap</a>
+      <a href="#claims">Claim-locks</a>
+      <a href="#how">How it works</a>
+      <a href="#run">Run it</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div>
+        <p class="eyebrow">Shared agent session · per-viewer permissions</p>
+        <h1 id="hero-title">Everyone in the session. Not everyone sees <span class="x">everything</span>.</h1>
+        <p class="lede">
+          Three teammates watch the same live agent. It uses each person's own integrations, and the server
+          <strong>redacts every tool call a viewer doesn't own</strong>, per viewer, before it leaves the machine.
+        </p>
+        <div class="hero-ctas">
+          <a class="btn primary" href="#claims">Try the claim-lock</a>
+          <a class="btn" href="#run">Run it locally</a>
+        </div>
+      </div>
+
+      <div class="viewer" aria-label="Simulated agent session">
+        <div class="viewer-head">
+          <span class="label">SESSION #42 · viewing as</span>
+          <div class="seats" role="group" aria-label="Choose whose view to see" id="seats"></div>
+        </div>
+        <div class="perm" id="perm" aria-live="polite"></div>
+        <div class="doc" id="doc"></div>
+      </div>
+    </section>
+
+    <section class="band" id="gap" aria-labelledby="gap-title">
+      <h2 id="gap-title">Two things break when a second person joins an agent session</h2>
+      <p class="intro">
+        Tools that make AI multiplayer mostly sync history and memory across a team. Two problems show up the moment
+        people share one live session. As far as their public launch material shows, neither has a per-viewer boundary yet.
+      </p>
+      <div class="gaps">
+        <div class="gap">
+          <h3>The agent's output is only as private as its most-connected user</h3>
+          <p>
+            Nina connects her support inbox. Theo joins and scrolls up. Everything the agent read from Nina's email is on
+            his screen, even though he never had access to it.
+          </p>
+          <p class="fix"><b>Fix</b>Tag every tool call with the integration it used, and filter the stream per viewer against a permission map.</p>
+        </div>
+        <div class="gap">
+          <h3>"Who's on it" is tracked per session, not per ticket</h3>
+          <p>
+            Two people ask the agent to resolve the same ticket a second apart. Both drafts get approved, and the customer
+            gets two answers, one of them stale.
+          </p>
+          <p class="fix"><b>Fix</b>A claim-lock keyed on the ticket. The first claim reaches the agent; the second gets told who has it.</p>
+        </div>
+      </div>
+      <blockquote>
+        <p>“When adding another teammate to a session that has exposure to sensitive data, it is important to handle permissions correctly.”</p>
+        <cite>Privacy pitfalls, <a href="https://multiplayer-ai.com/#privacy-pitfalls">The Multiplayer AI Manifesto</a>, September 2026</cite>
+      </blockquote>
+    </section>
+
+    <section class="band" id="claims" aria-labelledby="claims-title">
+      <h2 id="claims-title">Race two people to the same ticket</h2>
+      <p class="intro">
+        Click Resolve in either seat, or race them. The broker handles one claim at a time, so the first one wins and only
+        that one is sent to the agent.
+      </p>
+      <div class="race">
+        <div class="desk" id="desk-support"></div>
+        <div class="desk" id="desk-sales"></div>
+        <div class="log" aria-live="polite">
+          <h3>Broker log</h3>
+          <ol id="log"></ol>
+        </div>
+      </div>
+      <div class="race-ctrl">
+        <button class="btn primary" id="race" type="button">Race them (Theo clicks 180 ms later)</button>
+        <button class="btn" id="reset" type="button">Reset</button>
+      </div>
+    </section>
+
+    <section class="band" id="how" aria-labelledby="how-title">
+      <h2 id="how-title">One shared process, filtered at the broker</h2>
+      <p class="intro">
+        Built on <a href="https://github.com/butlerx/wetty">wetty</a> (node-pty, xterm.js, socket.io). Its server sees
+        terminal output in plain text, which is exactly what server-side redaction needs. An end-to-end encrypted terminal
+        couldn't filter anything.
+      </p>
+      <div class="flow">
+        <div class="step">
+          <h3>Tag</h3>
+          <p>Each mock tool prints its call as one marker line. The broker parses it out of the stream and never forwards the raw marker.</p>
+          <pre>##TOOL_CALL##{"tool":"send_email",
+  "owner":"support","output":"…"}</pre>
+        </div>
+        <div class="step">
+          <h3>Filter per viewer</h3>
+          <p>For each connected browser, the broker checks the permission map. Owners get the output; everyone else gets a redaction line.</p>
+          <pre>if (!viewer.ownedTools.includes(call.tool))
+  return redacted(call.tool);</pre>
+        </div>
+        <div class="step">
+          <h3>Lock before acting</h3>
+          <p>Viewers steer the agent only through claims. A won claim is written to the agent's stdin; a lost one never reaches it.</p>
+          <pre>const held = tryClaim('ticket-42', 'sales');
+if (held) reject(held.claimedBy);</pre>
+        </div>
+      </div>
+      <div class="pipe">
+<pre>browser ─ join / claim ─▶ <b>session broker</b> ─ resolve ticket-42 support ─▶ pty stdin ─▶ <b>agent</b>
+each browser ◀─ output, redacted for that viewer ─ <b>session broker</b> ◀─ pty stdout ◀──────┘</pre>
+      </div>
+    </section>
+
+    <section class="band" id="run" aria-labelledby="run-title">
+      <h2 id="run-title">Run it on your machine</h2>
+      <p class="intro">
+        Node 20+ and pnpm. Open two or three tabs and pick a different person in each. The agent is a scripted stand-in so
+        the demo runs the same every time.
+      </p>
+      <div class="run">
+        <div class="term">
+          <div class="term-head"><span>terminal</span><button class="copy" id="copy" type="button">Copy</button></div>
+<pre id="cmd"><span class="c"># clone, then:</span>
+pnpm install
+pnpm build
+pnpm start
+<span class="c"># open http://localhost:3000 in two tabs</span></pre>
+        </div>
+        <div>
+          <h3 style="font-size:22px;font-weight:700">Deliberately not in v1</h3>
+          <ul class="later" style="margin-top:16px">
+            <li><b>Real integrations.</b> Gmail, Slack and a CRM with real OAuth scopes instead of mock tools.</li>
+            <li><b>A real agent CLI</b> in the pty instead of the scripted stub.</li>
+            <li><b>Login.</b> v1 uses “pick your name” per tab.</li>
+            <li><b>Persistence.</b> Claims and history live in memory; a restart resets the session.</li>
+            <li><b>Output-bound claims.</b> Tie a claim to a hash of the draft, so an edited draft invalidates a stale approval.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>By Khushi Chandra · forked from wetty (MIT)</span>
+    <span>Source: <code>github.com/chandrakhushi/multiplayer-agent-sessions</code></span>
+  </footer>
+</div>
+
+<script>
+  const people = [
+    { id: 'support', name: 'Nina', role: 'Support lead', owns: ['send_email'], label: 'support inbox' },
+    { id: 'sales', name: 'Theo', role: 'Account executive', owns: ['update_crm'], label: 'CRM' },
+    { id: 'contractor', name: 'Sam', role: 'Contractor', owns: [], label: '' },
+  ];
+  const toolOwner = { send_email: 'Nina’s support inbox', update_crm: 'Theo’s CRM' };
+
+  const transcript = [
+    { say: 'Support agent online. Connected to Nina’s support inbox and Theo’s CRM.' },
+    { say: 'Picking up ticket-42 (Refund request from Acme Corp) for Nina…' },
+    { tool: 'send_email', lines: [
+      'To: Dana Whitfield <dana.whitfield@acmecorp.com>',
+      'Subject: Re: Refund request [ticket-42]',
+      '',
+      'Hi Dana, I’ve approved the refund of $2,140 for the',
+      'duplicate charge on invoice INV-8812. It lands in 3–5 days.',
+      'Status: SENT',
+    ] },
+    { say: 'Logging the outcome against the account.' },
+    { tool: 'update_crm', lines: [
+      'Account: Acme Corp  (owner: theo@ourcompany.com)',
+      '- health:     at risk',
+      '+ health:     watch',
+      '  deal value: $48,000 ARR · renewal in 41 days',
+      '+ note:       refund issued; discount ask likely at renewal',
+      'Status: SAVED',
+    ] },
+    { say: 'ticket-42 resolved for Nina.' },
+  ];
+
+  const seatsEl = document.getElementById('seats');
+  const docEl = document.getElementById('doc');
+  const permEl = document.getElementById('perm');
+  let viewer = people[1];
+
+  function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function renderSeats() {
+    seatsEl.replaceChildren(...people.map((p) => {
+      const b = el('button', 'seat');
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(p === viewer));
+      b.append(p.name, el('small', '', p.role));
+      b.addEventListener('click', () => { viewer = p; renderSeats(); renderDoc(); });
+      return b;
+    }));
+  }
+
+  function renderDoc() {
+    const owns = viewer.owns.length ? viewer.owns.map((t) => t).join(', ') : 'no integrations';
+    permEl.replaceChildren('Permissions for ', Object.assign(el('b'), { textContent: viewer.name }), ': ' + owns);
+    docEl.replaceChildren(...transcript.map((row) => {
+      if (row.say) {
+        const ln = el('div', 'ln');
+        ln.append(el('span', 'dot', '● '), el('span', 'who', 'agent '), row.say);
+        return ln;
+      }
+      if (viewer.owns.includes(row.tool)) {
+        const blk = el('div', 'blk');
+        blk.append(el('div', 'hd', row.tool + ' · your integration'));
+        row.lines.forEach((l) => blk.append(el('div', 'ln', l || ' ')));
+        return blk;
+      }
+      const red = el('div', 'red');
+      red.setAttribute('role', 'img');
+      red.setAttribute('aria-label', row.tool + ' output redacted: it used ' + toolOwner[row.tool]);
+      row.lines.filter(Boolean).forEach((l) => {
+        const bar = el('div', 'bar');
+        bar.style.width = Math.min(100, 20 + l.length * 1.35) + '%';
+        red.append(bar);
+      });
+      red.append(el('span', 'tag', '🔒 ' + row.tool + ' · ' + toolOwner[row.tool] + ' · redacted for you'));
+      return red;
+    }));
+  }
+
+  renderSeats();
+  renderDoc();
+
+  // Claim race
+  const racers = [people[0], people[1]];
+  let claim = null;
+  let t0 = null;
+  const toasts = {};
+  const logEl = document.getElementById('log');
+
+  function stamp() {
+    const now = performance.now();
+    if (t0 === null) t0 = now;
+    return '+' + Math.round(now - t0) + ' ms';
+  }
+
+  function log(text, cls) {
+    logEl.querySelector('.empty')?.parentElement.remove();
+    const li = el('li');
+    li.append(el('span', 't', stamp()), el('span', cls, text));
+    logEl.append(li);
+  }
+
+  function tryClaim(p) {
+    if (claim && claim.id !== p.id) {
+      log(p.name + ' claim ticket-42 → rejected, ' + claim.name + ' holds it', 'rejected');
+      toasts[p.id] = claim.name + ' is already handling ticket-42';
+    } else if (!claim) {
+      claim = p;
+      log(p.name + ' claim ticket-42 → granted', 'granted');
+      log('stdin ← resolve ticket-42 ' + p.id, '');
+    }
+    renderDesks();
+  }
+
+  function renderDesks() {
+    racers.forEach((p) => {
+      const desk = document.getElementById('desk-' + p.id);
+      const ticket = el('div', 'ticket');
+      const row = el('div', 'row');
+      let pill;
+      if (!claim) pill = el('span', 'pill', 'Open');
+      else if (claim.id === p.id) pill = el('span', 'pill mine', 'You’re handling this');
+      else pill = el('span', 'pill theirs', claim.name + ' is handling this');
+      row.append(el('span', 'id', 'ticket-42'), pill);
+      const btn = el('button', 'btn primary', 'Resolve');
+      btn.type = 'button';
+      btn.disabled = claim !== null;
+      btn.addEventListener('click', () => tryClaim(p));
+      ticket.append(row, el('div', 'title', 'Refund request from Acme Corp'), btn);
+      desk.replaceChildren(el('div', 'name', p.name), el('div', 'role', p.role + ' · owns ' + p.owns[0]), ticket);
+      if (toasts[p.id]) desk.append(el('div', 'toast', toasts[p.id]));
+    });
+    if (!logEl.children.length) {
+      const li = el('li');
+      li.append(el('span', 'empty', 'No claims yet.'));
+      logEl.append(li);
+    }
+  }
+
+  function reset() {
+    claim = null; t0 = null;
+    Object.keys(toasts).forEach((k) => delete toasts[k]);
+    logEl.replaceChildren();
+    renderDesks();
+  }
+
+  const raceBtn = document.getElementById('race');
+  raceBtn.addEventListener('click', () => {
+    reset();
+    raceBtn.disabled = true;
+    tryClaim(racers[0]);
+    // The second click arrives after the first claim is recorded, even though Theo's button still looked open.
+    setTimeout(() => { tryClaim(racers[1]); raceBtn.disabled = false; }, 180);
+  });
+  document.getElementById('reset').addEventListener('click', reset);
+  renderDesks();
+
+  document.getElementById('copy').addEventListener('click', async (e) => {
+    const text = 'pnpm install\npnpm build\npnpm start';
+    try {
+      await navigator.clipboard.writeText(text);
+      e.target.textContent = 'Copied';
+    } catch {
+      const r = document.createRange();
+      r.selectNodeContents(document.getElementById('cmd'));
+      getSelection().removeAllRanges();
+      getSelection().addRange(r);
+      e.target.textContent = 'Selected';
+    }
+    setTimeout(() => { e.target.textContent = 'Copy'; }, 1500);
+  });
+</script>

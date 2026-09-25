@@ -54,7 +54,14 @@ function renderPicker(socket: Socket): void {
       button.setAttribute('type', 'button');
       button.append(
         el('span', 'picker-name', p.name),
-        el('span', 'picker-tools', `owns: ${p.ownedTools.join(', ')}`),
+        el('span', 'picker-role', p.role),
+        el(
+          'span',
+          'picker-tools',
+          p.ownedTools.length > 0
+            ? `owns: ${p.ownedTools.join(', ')}`
+            : 'no integrations',
+        ),
       );
       button.addEventListener('click', () => {
         remember(p.id);
@@ -69,7 +76,7 @@ function renderYou(): void {
   const name = byId('you-name');
   const tools = byId('you-tools');
   if (name === null || tools === null || you === undefined) return;
-  name.textContent = `You are ${you.name}`;
+  name.textContent = `You are ${you.name} · ${you.role}`;
   tools.replaceChildren(...you.ownedTools.map((t) => el('li', 'chip', t)));
 }
 
@@ -79,7 +86,7 @@ function renderPresence(): void {
   list.replaceChildren(
     ...present.map((p) => {
       const li = el('li', 'presence-item');
-      li.append(el('span', 'dot'), el('span', '', p.name));
+      li.append(el('span', 'dot'), el('span', '', `${p.name} · ${p.role}`));
       if (p.id === you?.id) li.append(el('span', 'you-marker', '(you)'));
       return li;
     }),

@@ -10,33 +10,41 @@ piece of work twice.
 ## The gap
 
 Multiplayer AI tools (Mosaic, Superconductor, Claude Tag, Hops) focus on syncing
-agent session history and memory across a team. Based on their public launch
-material as of September 2026, none of them address two problems:
+agent session history and memory across a team. The Multiplayer AI Manifesto
+(multiplayer-ai.com, September 2026) names the permissions problem as a "privacy
+pitfall" and says no vendor it knows of satisfies its principles. As far as we
+know, the public launch material for these tools does not show either of these:
 
-1. **Permission scoping.** When a second teammate joins a live agent session,
-   they see everything the agent has done, including output from tool calls that
-   ran on the first teammate's private integrations (their email, their CRM,
-   their credentials). There is no visibility boundary per participant.
-2. **Duplicate-work races.** Two agents or teammates can independently pick up
-   the same customer thread and both act on it, because "who is working on this"
-   is tracked per session, not per object.
+1. **A per-viewer redaction boundary.** When a second teammate joins a live
+   agent session, they see everything the agent has done, including output from
+   tool calls that ran on the first teammate's private integrations (their
+   email, their CRM, their credentials).
+2. **Per-object locks.** Two agents or teammates can independently pick up the
+   same customer thread and both act on it, because "who is working on this" is
+   tracked per session, not per object.
 
-This repo demonstrates one answer to each, built small enough to read in one
-sitting.
+This repo is a small working implementation of both: per-viewer redaction and
+per-object claim-locks, built small enough to read in one sitting.
 
 ## What the demo shows
 
-Alice and Bob open the same live agent session in two browser tabs. The agent
-has two mock integrations: Alice's `send_email` and Bob's `update_crm`.
+Three people open the same live agent session in separate browser tabs:
 
-- **Redaction.** When the agent calls Alice's email tool, Alice sees the full
-  drafted email. Bob sees a single line in its place:
+- **Nina** (Support lead) owns `send_email`, the support inbox.
+- **Theo** (Account executive) owns `update_crm`, the CRM with deal values.
+- **Sam** (Contractor) owns no integrations.
+
+What each of them sees:
+
+- **Redaction.** When the agent calls Nina's email tool, Nina sees the full
+  drafted email. Theo and Sam see a single line in its place:
   `🔒 [redacted: send_email call using another participant's integration]`. The
-  same happens in reverse for Bob's CRM update.
-- **Claim-lock.** Both see three tickets with a Resolve button. Alice clicks
-  Resolve on `ticket-42`; a moment later Bob clicks it too. The agent works the
-  ticket once, for Alice. Bob gets "Alice is already handling ticket-42", and
-  his button shows who holds the claim.
+  same happens for Theo's CRM update. Sam sees every tool call redacted.
+- **Claim-lock.** Everyone sees three tickets with a Resolve button. Nina clicks
+  Resolve on `ticket-42`; a moment later Theo clicks it too. The agent works the
+  ticket once, for Nina. Theo gets "Nina is already handling ticket-42", and his
+  button shows who holds the claim. If Sam resolves a ticket, the claim still
+  wins, but the agent can only summarise it, since Sam has no integrations.
 
 ## Run it
 
@@ -48,9 +56,9 @@ pnpm build
 pnpm start
 ```
 
-Open <http://localhost:3000> in two tabs (or two browsers) and pick a different
-person in each. The name you pick is remembered per tab, so reloading keeps it.
-Restart the server to reset the session and all claims.
+Open <http://localhost:3000> in two or three tabs (or browsers) and pick a
+different person in each. The name you pick is remembered per tab, so reloading
+keeps it. Restart the server to reset the session and all claims.
 
 To show it from another machine: `ngrok http 3000`.
 
@@ -71,7 +79,7 @@ each browser ◀── output redacted for that viewer ── session broker ◀
   makes server-side redaction possible. An end-to-end encrypted terminal like
   sshx could not do this.
 - **Tagged tool calls.** Mock tools print each call as one line:
-  `##TOOL_CALL##{"tool":"send_email","owner":"alice","output":"..."}`. The
+  `##TOOL_CALL##{"tool":"send_email","owner":"support","output":"..."}`. The
   broker parses these lines out of the stream and never forwards the raw marker
   to anyone.
 - **Per-viewer filtering.** For each viewer, the broker checks the permission

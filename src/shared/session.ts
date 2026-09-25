@@ -21,12 +21,24 @@
 export interface Participant {
   id: string;
   name: string;
+  role: string;
   ownedTools: string[];
 }
 
 export const participants: Participant[] = [
-  { id: 'alice', name: 'Alice', ownedTools: ['send_email'] },
-  { id: 'bob', name: 'Bob', ownedTools: ['update_crm'] },
+  {
+    id: 'support',
+    name: 'Nina',
+    role: 'Support lead',
+    ownedTools: ['send_email'],
+  },
+  {
+    id: 'sales',
+    name: 'Theo',
+    role: 'Account executive',
+    ownedTools: ['update_crm'],
+  },
+  { id: 'contractor', name: 'Sam', role: 'Contractor', ownedTools: [] },
 ];
 
 export interface Ticket {

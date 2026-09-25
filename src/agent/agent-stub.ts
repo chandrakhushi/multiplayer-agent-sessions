@@ -1,5 +1,5 @@
 import { participants, tickets } from '../shared/session.js';
-import { tools, type ToolContext } from './mock-tools.js';
+import { integrations, tools, type ToolContext } from './mock-tools.js';
 
 const PREFIX = '\x1b[36m●\x1b[0m \x1b[2magent\x1b[0m';
 
@@ -18,10 +18,18 @@ function pause(): Promise<void> {
 async function startup(): Promise<void> {
   say('Hi team, support agent online.');
   await pause();
-  say("Connected to Alice's email integration (send_email).");
-  await pause();
-  say("Connected to Bob's CRM integration (update_crm).");
-  await pause();
+  /* eslint-disable no-await-in-loop */
+  for (const p of participants) {
+    for (const tool of p.ownedTools) {
+      say(`Connected to ${p.name}'s ${integrations[tool] ?? tool} (${tool}).`);
+      await pause();
+    }
+    if (p.ownedTools.length === 0) {
+      say(`${p.name} (${p.role}) has no connected integrations.`);
+      await pause();
+    }
+  }
+  /* eslint-enable no-await-in-loop */
   say('Running a warm-up triage pass over the inbox…');
   await pause();
   const triage: ToolContext = {
@@ -49,11 +57,20 @@ async function handle(line: string): Promise<void> {
     return;
   }
   say(`Picking up ${ticket.id} (${ticket.title}) for ${who.name}…`);
+  if (who.ownedTools.length === 0) {
+    await pause();
+    say(
+      `${who.name} has no connected integrations, so I can only summarise ${ticket.id}, not act on it.`,
+    );
+    await pause();
+    say(`${ticket.id} summarised for ${who.name}: "${ticket.title}".`);
+    return;
+  }
   // Steps run one after another on purpose so the narration reads in order.
   /* eslint-disable no-await-in-loop */
   for (const tool of who.ownedTools) {
     await pause();
-    say(`Using ${who.name}'s ${tool} integration.`);
+    say(`Using ${who.name}'s ${integrations[tool] ?? tool} (${tool}).`);
     await pause();
     tools[tool]?.({ ticketId: ticket.id, title: ticket.title });
   }

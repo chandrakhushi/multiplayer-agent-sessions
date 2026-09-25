@@ -4,8 +4,8 @@ import { TOOL_MARKER, participants } from '../shared/session';
 import { tryClaim } from './claims';
 import { createParser, filterForClient } from './session-broker';
 
-const [alice, bob] = participants;
-const call = { tool: 'send_email', owner: 'alice', output: 'To: acme\nHi' };
+const [support, sales, contractor] = participants;
+const call = { tool: 'send_email', owner: 'support', output: 'To: acme\nHi' };
 const line = `${TOOL_MARKER}${JSON.stringify(call)}\r\n`;
 
 describe('Session broker', () => {
@@ -29,19 +29,21 @@ describe('Session broker', () => {
   });
 
   it('shows owners the call, redacts it for others, passes narration through', () => {
-    expect(filterForClient({ text: 'narration' }, bob)).to.equal('narration');
-    const owned = filterForClient({ call }, alice);
+    expect(filterForClient({ text: 'narration' }, sales)).to.equal('narration');
+    const owned = filterForClient({ call }, support);
     expect(owned).to.include('send_email · your integration');
     expect(owned).to.include('\x1b[36m│\x1b[0m To: acme\r\n');
     expect(owned).to.include('\x1b[36m│\x1b[0m Hi\r\n');
-    const redacted = filterForClient({ call }, bob);
-    expect(redacted).to.include('redacted: send_email');
-    expect(redacted).not.to.include('acme');
+    for (const viewer of [sales, contractor]) {
+      const redacted = filterForClient({ call }, viewer);
+      expect(redacted).to.include('redacted: send_email');
+      expect(redacted).not.to.include('acme');
+    }
   });
 
   it('rejects a second participant claiming the same resource', () => {
-    expect(tryClaim('spec-ticket', 'alice')).to.equal(null);
-    expect(tryClaim('spec-ticket', 'alice')).to.equal(null);
-    expect(tryClaim('spec-ticket', 'bob')?.claimedBy).to.equal('alice');
+    expect(tryClaim('spec-ticket', 'support')).to.equal(null);
+    expect(tryClaim('spec-ticket', 'support')).to.equal(null);
+    expect(tryClaim('spec-ticket', 'sales')?.claimedBy).to.equal('support');
   });
 });

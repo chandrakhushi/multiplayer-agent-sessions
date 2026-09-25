@@ -24,9 +24,10 @@ same piece of work.
 
 ## Demo scenario
 
-Alice and Bob join the same live agent session in a browser. The agent has two
-mock tools: `send_email` (Alice's) and `update_crm` (Bob's). When the agent
-calls Alice's email tool, Bob sees
+Nina (Support lead), Theo (Account executive) and Sam (Contractor) join the same
+live agent session in a browser. The agent has two mock tools: `send_email`
+(Nina's) and `update_crm` (Theo's); Sam owns none. When the agent calls Nina's
+email tool, Theo and Sam see
 `[redacted: tool call using another participant's integration]` instead of the
 call and its output. Then both try to have the agent act on the same ticket at
 the same time — the second attempt is blocked with "claimed by X".
@@ -72,18 +73,34 @@ xterm.js renders its own view.
 ## Permission scoping
 
 ```ts
-type Participant = { id: string; name: string; ownedTools: string[] };
+type Participant = {
+  id: string;
+  name: string;
+  role: string;
+  ownedTools: string[];
+};
 
 const participants: Participant[] = [
-  { id: 'alice', name: 'Alice', ownedTools: ['send_email'] },
-  { id: 'bob', name: 'Bob', ownedTools: ['update_crm'] },
+  {
+    id: 'support',
+    name: 'Nina',
+    role: 'Support lead',
+    ownedTools: ['send_email'],
+  },
+  {
+    id: 'sales',
+    name: 'Theo',
+    role: 'Account executive',
+    ownedTools: ['update_crm'],
+  },
+  { id: 'contractor', name: 'Sam', role: 'Contractor', ownedTools: [] },
 ];
 ```
 
 Tool output marker (stripped by the broker, never sent raw):
 
 ```
-##TOOL_CALL##{"tool":"send_email","owner":"alice","output":"..."}
+##TOOL_CALL##{"tool":"send_email","owner":"support","output":"..."}
 ```
 
 ```ts
@@ -109,9 +126,9 @@ function tryClaim(resourceId: string, participantId: string): Claim | null {
 }
 ```
 
-Demo: both see "resolve ticket #42". Alice clicks first, broker claims
-`ticket-42` for Alice. Bob clicks a second later, sees "Alice is already
-handling this".
+Demo: both see "resolve ticket #42". Nina clicks first, broker claims
+`ticket-42` for Nina. Theo clicks a second later, sees "Nina is already handling
+this".
 
 Stretch: bind the claim to a hash of the output text, so an edited draft
 invalidates a stale approval.

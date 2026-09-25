@@ -1,4 +1,9 @@
-import { participants, TOOL_MARKER, type ToolCall } from '../shared/session.js';
+import {
+  participants,
+  TOOL_MARKER,
+  type Participant,
+  type ToolCall,
+} from '../shared/session.js';
 
 export interface ToolContext {
   ticketId: string;
@@ -40,19 +45,33 @@ const fallback: Customer = {
   deal: '$76,000 ARR',
 };
 
+/** What each tool is connected to, for narration. */
+export const integrations: Record<string, string> = {
+  send_email: 'support inbox',
+  update_crm: 'CRM',
+};
+
+function ownerOf(tool: string): Participant {
+  const owner = participants.find((p) => p.ownedTools.includes(tool));
+  if (!owner) throw new Error(`No participant owns ${tool}`);
+  return owner;
+}
+
+const emailOf = (p: Participant): string =>
+  `${p.name.toLowerCase()}@ourcompany.com`;
+
 function emit(tool: string, output: string): void {
-  const owner =
-    participants.find((p) => p.ownedTools.includes(tool))?.id ?? 'unknown';
-  const call: ToolCall = { tool, owner, output };
+  const call: ToolCall = { tool, owner: ownerOf(tool).id, output };
   process.stdout.write(`${TOOL_MARKER}${JSON.stringify(call)}\r\n`);
 }
 
 export function sendEmail({ ticketId, title }: ToolContext): void {
   const c = customers[ticketId] ?? fallback;
+  const me = ownerOf('send_email');
   emit(
     'send_email',
     [
-      'From: alice@ourcompany.com',
+      `From: ${me.name} <${emailOf(me)}>`,
       `To: ${c.contact} <${c.email}>`,
       `Subject: Re: ${title} [${ticketId}]`,
       '',
@@ -63,7 +82,8 @@ export function sendEmail({ ticketId, title }: ToolContext): void {
       'the next hour. Reply here if anything still looks off.',
       '',
       'Best,',
-      'Alice',
+      me.name,
+      me.role,
       'Status: SENT',
     ].join('\n'),
   );
@@ -74,7 +94,7 @@ export function updateCrm({ ticketId, title }: ToolContext): void {
   emit(
     'update_crm',
     [
-      `CRM record: ${c.account} (owner: bob@ourcompany.com)`,
+      `CRM record: ${c.account} (owner: ${emailOf(ownerOf('update_crm'))})`,
       `  contact:      ${c.contact} <${c.email}>`,
       `  deal value:   ${c.deal}`,
       '- health:       at risk',

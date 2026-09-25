@@ -23,20 +23,20 @@ doesn't matter.
 
 ## Script
 
-| Time   | Action                                                                                                            | Say / caption                                                                                  |
-| ------ | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| 0–5s   | Left window: pick **Alice**. Right window: **Bob**.                                                               | "Two teammates join the same live agent session."                                              |
-| 5–15s  | Wait while the agent runs its warm-up triage.                                                                     | "The agent uses Alice's email integration and Bob's CRM integration."                          |
-| 15–25s | Point at the email block on the left and the 🔒 line on the right, then the reverse for the CRM update.           | "Each person sees only their own integration's output. The other's is redacted by the server." |
-| 25–35s | Click **Resolve** on ticket-42 in Alice's window, then immediately in Bob's.                                      | "Both try to have the agent resolve the same ticket."                                          |
-| 35–45s | Show Bob's "Alice is already handling ticket-42" toast, then the agent working the ticket once in Alice's window. | "The first claim wins. The second is blocked, so the work isn't duplicated."                   |
-| 45–55s | Optional: Bob resolves ticket-43; Alice sees only the redacted line.                                              | "Claims are per ticket, and redaction still applies."                                          |
+| Time   | Action                                                                                                           | Say / caption                                                                                                   |
+| ------ | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 0–5s   | Left window: pick **Nina** (Support lead). Right window: **Theo** (Account executive).                           | "Two teammates join the same live agent session."                                                               |
+| 5–15s  | Wait while the agent runs its warm-up triage.                                                                    | "The agent uses Nina's support inbox and Theo's CRM."                                                           |
+| 15–25s | Point at the email block on the left and the 🔒 line on the right, then the reverse for the CRM update.          | "Each person sees only their own integration's output. The other's is redacted by the server."                  |
+| 25–35s | Click **Resolve** on ticket-42 in Nina's window, then immediately in Theo's.                                     | "Both try to have the agent resolve the same ticket."                                                           |
+| 35–45s | Show Theo's "Nina is already handling ticket-42" toast, then the agent working the ticket once in Nina's window. | "The first claim wins. The second is blocked, so the work isn't duplicated."                                    |
+| 45–55s | Optional: open a third window as **Sam** (Contractor) and resolve ticket-43.                                     | "Sam has no integrations, so every tool call is redacted for Sam, and the agent can only summarise the ticket." |
 
 ## Tips
 
-- If Bob's button is already disabled before you click it, you were too slow.
-  That still shows the lock ("Alice is handling this"). For the toast, click
-  both windows within about half a second.
+- If Theo's button is already disabled before you click it, you were too slow.
+  That still shows the lock ("Nina is handling this"). For the toast, click both
+  windows within about half a second.
 - Zoom the browser to 110–125% so the terminal text is readable in the video.
 - To re-record, restart the server (Ctrl-C, then `pnpm start`). The chosen name
   is stored per tab, so open fresh tabs to get the picker again.
