@@ -2,7 +2,7 @@
   "name": "multiplayer-agent-sessions",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
   "containerEnv": { "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0" },
-  "postCreateCommand": "corepack enable && pnpm install && pnpm build",
+  "postCreateCommand": "corepack enable && npm install -g node-gyp && pnpm install && pnpm build",
   "postAttachCommand": "pnpm start",
   "forwardPorts": [3000],
   "portsAttributes": {
